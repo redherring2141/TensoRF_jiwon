@@ -7,20 +7,24 @@ import time
 
 
 def positional_encoding(positions, freqs):
-    
+        tt = time.time() #JW_profiling
         freq_bands = (2**torch.arange(freqs).float()).to(positions.device)  # (F,)
         pts = (positions[..., None] * freq_bands).reshape(
             positions.shape[:-1] + (freqs * positions.shape[-1], ))  # (..., DF)
         pts = torch.cat([torch.sin(pts), torch.cos(pts)], dim=-1)
+        #print(f'[JW][tensorBase.py-positional_encoding] {time.time()-tt} s') #JW_profiling
         return pts
 
 def raw2alpha(sigma, dist):
+    tt = time.time() #JW_profiling
     # sigma, dist  [N_rays, N_samples]
     alpha = 1. - torch.exp(-sigma*dist)
 
     T = torch.cumprod(torch.cat([torch.ones(alpha.shape[0], 1).to(alpha.device), 1. - alpha + 1e-10], -1), -1)
 
     weights = alpha * T[:, :-1]  # [N_rays, N_samples]
+    #print(f'[JW][tensorBase.py-raw2alpha] {time.time()-tt} s') #JW_profiling
+    
     return alpha, weights, T[:,-1:]
 
 
@@ -72,6 +76,8 @@ class MLPRender_Fea(torch.nn.Module):
         torch.nn.init.constant_(self.mlp[-1].bias, 0)
 
     def forward(self, pts, viewdirs, features):
+        tt = time.time() #JW_profiling
+
         indata = [features, viewdirs]
         if self.feape > 0:
             indata += [positional_encoding(features, self.feape)]
@@ -80,6 +86,7 @@ class MLPRender_Fea(torch.nn.Module):
         mlp_in = torch.cat(indata, dim=-1)
         rgb = self.mlp(mlp_in)
         rgb = torch.sigmoid(rgb)
+        #print(f'[JW][tensorBase.py-MLPRender_Fea-forward] {time.time()-tt} s') #JW_profiling
 
         return rgb
 
@@ -98,6 +105,8 @@ class MLPRender_PE(torch.nn.Module):
         torch.nn.init.constant_(self.mlp[-1].bias, 0)
 
     def forward(self, pts, viewdirs, features):
+        tt = time.time() #JW_profiling
+        
         indata = [features, viewdirs]
         if self.pospe > 0:
             indata += [positional_encoding(pts, self.pospe)]
@@ -106,6 +115,8 @@ class MLPRender_PE(torch.nn.Module):
         mlp_in = torch.cat(indata, dim=-1)
         rgb = self.mlp(mlp_in)
         rgb = torch.sigmoid(rgb)
+
+        #print(f'[JW][tensorBase.py-MLPRender_PE-forward] {time.time()-tt} s') #JW_profiling        
 
         return rgb
 
@@ -124,12 +135,16 @@ class MLPRender(torch.nn.Module):
         torch.nn.init.constant_(self.mlp[-1].bias, 0)
 
     def forward(self, pts, viewdirs, features):
+        tt = time.time() #JW_profiling
+
         indata = [features, viewdirs]
         if self.viewpe > 0:
             indata += [positional_encoding(viewdirs, self.viewpe)]
         mlp_in = torch.cat(indata, dim=-1)
         rgb = self.mlp(mlp_in)
         rgb = torch.sigmoid(rgb)
+
+        #print(f'[JW][tensorBase.py-MLPRender-forward] {time.time()-tt} s') #JW_profiling        
 
         return rgb
 
@@ -372,7 +387,9 @@ class TensorBase(torch.nn.Module):
 
         mask_filtered = torch.cat(mask_filtered).view(all_rgbs.shape[:-1])
 
-        print(f'Ray filtering done! takes {time.time()-tt} s. ray mask ratio: {torch.sum(mask_filtered) / N}')
+        #print(f'Ray filtering done! takes {time.time()-tt} s. ray mask ratio: {torch.sum(mask_filtered) / N}')
+        print(f'ray mask ratio: {torch.sum(mask_filtered) / N}') #JW_profiling
+        #print(f'[JW][tensorBase.py-TensorBase-filtering_rays] {time.time()-tt} s') #JW_profiling
         return all_rays[mask_filtered], all_rgbs[mask_filtered]
 
 
@@ -407,6 +424,7 @@ class TensorBase(torch.nn.Module):
 
 
     def forward(self, rays_chunk, white_bg=True, is_train=False, ndc_ray=False, N_samples=-1):
+        tt = time.time() #JW_profiling
 
         # sample points
         viewdirs = rays_chunk[:, 3:6]
@@ -461,6 +479,7 @@ class TensorBase(torch.nn.Module):
         with torch.no_grad():
             depth_map = torch.sum(weight * z_vals, -1)
             depth_map = depth_map + (1. - acc_map) * rays_chunk[..., -1]
+        #print(f'[JW][tensorBase.py-TensorBase-forward] {time.time()-tt} s') #JW_profiling        
 
         return rgb_map, depth_map # rgb, sigma, alpha, weight, bg_weight
 
