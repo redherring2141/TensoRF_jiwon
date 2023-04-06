@@ -235,7 +235,7 @@ class TensorVMSplit(TensorBase):
                                             align_corners=True).view(-1, *xyz_sampled.shape[:1]))
         plane_coef_point, line_coef_point = torch.cat(plane_coef_point), torch.cat(line_coef_point)
 
-        print(f'[JW][tensoRF.py-TensorVMSplit-compute_appfeature] {time.time()-tt} s') #JW_profiling
+        #print(f'[JW-tensoRF.py-TensorVMSplit-compute_appfeature]: {time.time()-tt}') #JW_profiling
         return self.basis_mat((plane_coef_point * line_coef_point).T)
 
 

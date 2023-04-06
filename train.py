@@ -13,6 +13,7 @@ import datetime
 
 from dataLoader import dataset_dict
 import sys
+import time
 
 
 
@@ -87,20 +88,21 @@ def render_test(args):
                                 N_vis=-1, N_samples=-1, white_bg = white_bg, ndc_ray=ndc_ray,device=device)
 
 def reconstruction(args):
+    tt=time.time()#JW_profiling
 
     # init dataset
-    dataset = dataset_dict[args.dataset_name]
-    train_dataset = dataset(args.datadir, split='train', downsample=args.downsample_train, is_stack=False)
-    test_dataset = dataset(args.datadir, split='test', downsample=args.downsample_train, is_stack=True)
-    white_bg = train_dataset.white_bg
-    near_far = train_dataset.near_far
-    ndc_ray = args.ndc_ray
+    dataset = dataset_dict[args.dataset_name]#JW_profiling - arg.dataset_name: blender -> class BlenderDataset
+    train_dataset = dataset(args.datadir, split='train', downsample=args.downsample_train, is_stack=False)#JW_profiling - 100 images & cams ->
+    test_dataset = dataset(args.datadir, split='test', downsample=args.downsample_train, is_stack=True)#JW_profiling - 200 images & cams
+    white_bg = train_dataset.white_bg#JW_profiling - True
+    near_far = train_dataset.near_far#JW_profiling - [2.0, 6.0]
+    ndc_ray = args.ndc_ray#JW_profiling - 0
 
     # init resolution
-    upsamp_list = args.upsamp_list
-    update_AlphaMask_list = args.update_AlphaMask_list
-    n_lamb_sigma = args.n_lamb_sigma
-    n_lamb_sh = args.n_lamb_sh
+    upsamp_list = args.upsamp_list#JW_profiling - [2000, 3000, 4000, 5500, 7000]
+    update_AlphaMask_list = args.update_AlphaMask_list#JW_profiling - [2000, 4000]
+    n_lamb_sigma = args.n_lamb_sigma#JW_profiling - [16, 16, 16]
+    n_lamb_sh = args.n_lamb_sh#JW_profiling - [48, 48, 48]
 
     
     if args.add_timestamp:
@@ -120,12 +122,12 @@ def reconstruction(args):
 
     # init parameters
     # tensorVM, renderer = init_parameters(args, train_dataset.scene_bbox.to(device), reso_list[0])
-    aabb = train_dataset.scene_bbox.to(device)
-    reso_cur = N_to_reso(args.N_voxel_init, aabb)
-    nSamples = min(args.nSamples, cal_n_samples(reso_cur,args.step_ratio))
+    aabb = train_dataset.scene_bbox.to(device)#JW_profiling - tensor([[-1.5, -1.5, -1.5], -> aabb.shape: torch.Size([2,3])
+    reso_cur = N_to_reso(args.N_voxel_init, aabb)#JW_profiling - [128, 128, 128]
+    nSamples = min(args.nSamples, cal_n_samples(reso_cur,args.step_ratio))#JW_profiling - 443
 
 
-    if args.ckpt is not None:
+    if args.ckpt is not None:#JW_profiling - args.ckpt: None
         ckpt = torch.load(args.ckpt, map_location=device)
         kwargs = ckpt['kwargs']
         kwargs.update({'device':device})
@@ -171,10 +173,15 @@ def reconstruction(args):
     tvreg = TVLoss()
     print(f"initial TV_weight density: {TV_weight_density} appearance: {TV_weight_app}")
 
-
     pbar = tqdm(range(args.n_iters), miniters=args.progress_refresh_rate, file=sys.stdout)
+    
+    print('\n')
+    print(f'[JW-train.py-reconstruction]preparation: {time.time()-tt}') #JW_profiling
+
+    tt = time.time() #JW_profiling
     for iteration in pbar:
 
+        tt_rendertrain = time.time()
 
         ray_idx = trainingSampler.nextids()
         rays_train, rgb_train = allrays[ray_idx], allrgbs[ray_idx].to(device)
@@ -183,8 +190,11 @@ def reconstruction(args):
         rgb_map, alphas_map, depth_map, weights, uncertainty = renderer(rays_train, tensorf, chunk=args.batch_size,
                                 N_samples=nSamples, white_bg = white_bg, ndc_ray=ndc_ray, device=device, is_train=True)
 
-        loss = torch.mean((rgb_map - rgb_train) ** 2)
+        print(f'\n[JW-train.py-reconstruction]rendering_train: {time.time()-tt_rendertrain}') #JW_profiling
 
+        tt_losscalc = time.time()
+
+        loss = torch.mean((rgb_map - rgb_train) ** 2)
 
         # loss
         total_loss = loss
@@ -225,12 +235,13 @@ def reconstruction(args):
         # Print the current values of the losses.
         if iteration % args.progress_refresh_rate == 0:
             pbar.set_description(
-                f'Iteration {iteration:05d}:'
+                f'\nIteration {iteration:05d}:'
                 + f' train_psnr = {float(np.mean(PSNRs)):.2f}'
                 + f' test_psnr = {float(np.mean(PSNRs_test)):.2f}'
                 + f' mse = {loss:.6f}'
             )
             PSNRs = []
+            print('\n')
 
 
         if iteration % args.vis_every == args.vis_every - 1 and args.N_vis!=0:
@@ -272,10 +283,15 @@ def reconstruction(args):
             grad_vars = tensorf.get_optparam_groups(args.lr_init*lr_scale, args.lr_basis*lr_scale)
             optimizer = torch.optim.Adam(grad_vars, betas=(0.9, 0.99))
         
+        print(f'[JW-train.py-reconstruction]computing_loss: {time.time()-tt_losscalc}') #JW_profiling
+
+        
 
     tensorf.save(f'{logfolder}/{args.expname}.th')
+    print(f'[JW-train.py-reconstruction]main_training: {time.time()-tt}') #JW_profiling
 
 
+    tt=time.time() #JW_profiling
     if args.render_train:
         os.makedirs(f'{logfolder}/imgs_train_all', exist_ok=True)
         train_dataset = dataset(args.datadir, split='train', downsample=args.downsample_train, is_stack=True)
@@ -297,9 +313,12 @@ def reconstruction(args):
         os.makedirs(f'{logfolder}/imgs_path_all', exist_ok=True)
         evaluation_path(test_dataset,tensorf, c2ws, renderer, f'{logfolder}/imgs_path_all/',
                                 N_vis=-1, N_samples=-1, white_bg = white_bg, ndc_ray=ndc_ray,device=device)
+    print(f'[JW-train.py-reconstruction]evaluation: {time.time()-tt}') #JW_profiling
+
 
 
 if __name__ == '__main__':
+    tt=time.time() #JW_profiling
 
     torch.set_default_dtype(torch.float32)
     torch.manual_seed(20211202)
@@ -316,3 +335,4 @@ if __name__ == '__main__':
     else:
         reconstruction(args)
 
+    print(f'[JW-train.py-main]end2end: {time.time()-tt}') #JW_profiling
