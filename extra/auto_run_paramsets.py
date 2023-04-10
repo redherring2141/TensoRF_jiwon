@@ -79,7 +79,7 @@ if __name__ == '__main__':
     # nerf
     expFolder = "nerf/"
     # parameters to iterate, use tuple to couple multiple parameters
-    datafolder = '/mnt/new_disk_2/anpei/Dataset/nerf_synthetic/'
+    datafolder = '/home/jiwon/NeRF/datasets/nerf_synthetic/'
     param_dict = {
         'data_name': ['ship', 'mic', 'chair', 'lego', 'drums', 'ficus', 'hotdog', 'materials'],
         'data_dim_color': [13, 27, 54]

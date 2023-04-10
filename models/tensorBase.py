@@ -506,7 +506,7 @@ class TensorBase(torch.nn.Module):
         print(f'[JW-tensorBase.py-TensorBase-forward]depth_mapping: {time.time()-tt_depthmapping}') #JW_profiling
             
 
-        print(f'[JW-tensorBase.py-TensorBase-forward]: {time.time()-tt_fwd}') #JW_profiling        
+        print(f'[JW-tensorBase.py-TensorBase-forward]forward_end2end: {time.time()-tt_fwd}') #JW_profiling        
 
         return rgb_map, depth_map # rgb, sigma, alpha, weight, bg_weight
 

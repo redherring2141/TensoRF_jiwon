@@ -1,0 +1,36 @@
+<Total>
+[JW-train.py-reconstruction]preparation: 9.112028360366821
+[JW-tensorBase.py-TensorBase-forward]sampling_pts: 219.61487579345703
+[JW-tensorBase.py-TensorBase-forward]normalize_coord: 5.0835535526275635
+[JW-tensorBase.py-TensorBase-forward]compute_densityfeature: 130.71653199195862
+[JW-tensorBase.py-TensorBase-forward]feature2density: 13.175790786743164
+[JW-tensorBase.py-TensorBase-forward]raw2alpha: 31.24152445793152
+[JW-tensorBase.py-TensorBase-forward]rgb_mapping: 11.66710376739502
+[JW-tensorBase.py-TensorBase-forward]depth_mapping: 8.767553567886353
+[JW-tensorBase.py-TensorBase-forward]: 671.0486578941345
+[JW-renderer.py-OctreeRender_trilinear_fast]rendering: 680.4602839946747
+[JW-train.py-reconstruction]rendering_train: 457.02749729156494
+[JW-train.py-reconstruction]computing_loss: 552.7671074867249
+[JW-tensorBase.py-TensorBase-forward]compute_appfeature: 93.270667552948
+[JW-tensorBase.py-TensorBase-forward]decoding_funcS: 126.29540038108826
+[JW-train.py-reconstruction]main_training: 1011.2648837566376
+[JW-train.py-reconstruction]evaluation: 637.2434542179108
+[JW-train.py-main]end2end: 1657.9220159053802
+<Average>
+[JW-train.py-reconstruction]preparation: 9.112028360366821
+[JW-tensorBase.py-TensorBase-forward]sampling_pts: 0.0034446690580104623
+[JW-tensorBase.py-TensorBase-forward]normalize_coord: 8.968075421412302e-05
+[JW-tensorBase.py-TensorBase-forward]compute_densityfeature: 0.0023060162651840632
+[JW-tensorBase.py-TensorBase-forward]feature2density: 0.0002324387542867278
+[JW-tensorBase.py-TensorBase-forward]raw2alpha: 0.0004900246954424205
+[JW-tensorBase.py-TensorBase-forward]rgb_mapping: 0.00018299903956387766
+[JW-tensorBase.py-TensorBase-forward]depth_mapping: 0.00013751946620478946
+[JW-tensorBase.py-TensorBase-forward]: 0.010525427933403412
+[JW-renderer.py-OctreeRender_trilinear_fast]rendering: 0.022520611748954977
+[JW-train.py-reconstruction]rendering_train: 0.015234249909718832
+[JW-train.py-reconstruction]computing_loss: 0.018425570249557495
+[JW-tensorBase.py-TensorBase-forward]compute_appfeature: 0.0016820982804549767
+[JW-tensorBase.py-TensorBase-forward]decoding_funcS: 0.0022776858082397926
+[JW-train.py-reconstruction]main_training: 1011.2648837566376
+[JW-train.py-reconstruction]evaluation: 637.2434542179108
+[JW-train.py-main]end2end: 1657.9220159053802
